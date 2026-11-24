@@ -195,7 +195,7 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             f"• 💬 <b>Quote / Blockquote</b>\n"
             f"• 🔽 <b>Expandable Quote (Collapse)</b> (Bot API 10.5)\n\n"
             f"💡 <i>Or use HTML tags:</i> <code>&lt;blockquote&gt;...&lt;/blockquote&gt;</code> or <code>&lt;blockquote expandable&gt;...&lt;/blockquote&gt;</code>\n"
-            f"🤖 <b>Auto-Detection:</b> Postbot automatically detects all your formatting and saves it into your draft!\n\n"
+            f"🤖 <b>Auto-Detection:</b> Kiwi post Maker automatically detects all your formatting and saves it into your draft!\n\n"
             f"<i>Type or paste your formatted text below and send it, or tap Cancel:</i>",
             parse_mode=ParseMode.HTML,
             reply_markup=InlineKeyboardMarkup([
@@ -789,7 +789,7 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             f"⏰ <b>Post Scheduled!</b>\n\n"
             f"• <b>Draft:</b> #{post_id}\n"
             f"• <b>Publish Time:</b> <code>{time_display}</code>\n\n"
-            f"Postbot will automatically publish this post to your channel at the scheduled time.",
+            f"Kiwi post Maker will automatically publish this post to your channel at the scheduled time.",
             parse_mode=ParseMode.HTML,
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("🏠 Main Menu", callback_data="nav_home")],
@@ -850,7 +850,7 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             f"• <b>ID:</b> <code>{chan_id}</code>\n\n"
             f"🔗 <b>Authorized Poster Invite Link:</b>\n"
             f"<code>{invite_link}</code>\n\n"
-            f"Send this link to any admin or friend. When they tap it, Postbot will authorize them to post to this channel!\n\n"
+            f"Send this link to any admin or friend. When they tap it, Kiwi post Maker will authorize them to post to this channel!\n\n"
             f"<i>Or use command:</i>\n<code>/invite {chan_id} &lt;user_id&gt;</code>",
             parse_mode=ParseMode.HTML,
             reply_markup=InlineKeyboardMarkup([

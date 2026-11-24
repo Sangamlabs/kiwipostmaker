@@ -280,7 +280,7 @@ async def invite_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 f"👑 <b>Ownership Verified for {html.escape(title)}!</b>\n\n"
                 f"Send this 1-click authorization link to your admin/friend:\n\n"
                 f"🔗 <code>{invite_link}</code>\n\n"
-                f"<i>When they tap the link, Postbot will automatically authorize them to post to this channel.</i>",
+                f"<i>When they tap the link, Kiwi post Maker will automatically authorize them to post to this channel.</i>",
                 parse_mode=ParseMode.HTML,
             )
     except Exception as exc:

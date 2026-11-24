@@ -40,7 +40,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     welcome_text = (
         f"👋 <b>Welcome, {first_name}!</b>\n\n"
-        f"🤖 <b>Postbot</b> is your production-grade Telegram post creator and automated publisher.\n\n"
+        f"🤖 <b>Kiwi post Maker</b> is your production-grade Telegram post creator and automated publisher.\n\n"
         f"✨ <b>Features:</b>\n"
         f"• Rich text & Unicode font styling\n"
         f"• Colored inline URL buttons (Blue, Green, Red)\n"
@@ -94,7 +94,7 @@ async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 async def how_it_works_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     guide = (
-        "📖 <b>How To Use Postbot</b>\n\n"
+        "📖 <b>How To Use Kiwi post Maker</b>\n\n"
         "1️⃣ <b>Connect Channels:</b> Tap <i>📢 MY CHANNELS</i>, add the bot as an administrator "
         "to your channel with 'Post Messages' rights, and send the channel ID or forward a post.\n\n"
         "2️⃣ <b>Create a Post:</b> Tap <i>📝 CREATE POST</i> to open the interactive studio.\n\n"
