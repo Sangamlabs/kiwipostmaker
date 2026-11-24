@@ -1,0 +1,44 @@
+{
+  "name": "Kiwi Post Maker",
+  "description": "Production Telegram Post Maker Bot with Bot API 10.5 Rich Messages, native tables, slideshow carousels, expandable blockquotes, and styled buttons.",
+  "repository": "https://github.com/Sangamlabs/kiwipostmaker",
+  "keywords": [
+    "telegram",
+    "bot",
+    "python",
+    "postbot",
+    "rich-messages",
+    "telegram-bot",
+    "channel-manager"
+  ],
+  "formation": {
+    "worker": {
+      "quantity": 1,
+      "size": "eco"
+    }
+  },
+  "env": {
+    "BOT_TOKEN": {
+      "description": "Telegram Bot API Token from @BotFather",
+      "required": true
+    },
+    "MONGO_URI": {
+      "description": "MongoDB Atlas connection string URI",
+      "required": true
+    },
+    "DATABASE_NAME": {
+      "description": "MongoDB database name",
+      "value": "postbot",
+      "required": false
+    },
+    "OWNER_IDS": {
+      "description": "Comma-separated Telegram user IDs of bot administrators",
+      "required": false
+    },
+    "LOG_LEVEL": {
+      "description": "Logging level (INFO, DEBUG, WARNING, ERROR)",
+      "value": "INFO",
+      "required": false
+    }
+  }
+}

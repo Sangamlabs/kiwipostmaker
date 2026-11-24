@@ -1,0 +1,6 @@
+tests/
+.pytest_cache/
+DX-Notes.pdf
+*.pdf
+.git/
+.github/
