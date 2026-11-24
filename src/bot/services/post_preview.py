@@ -30,7 +30,7 @@ async def render_post_preview(bot: Bot, chat_id: int, post: Post) -> None:
 
     # Article Mode Preview or Post with In-Body Row Buttons (Bot API 10.3 / 10.5 Rich Document)
     if post.post_type == "article" or has_row_buttons:
-        article_header = "<b>👁 --- ARTICLE PREVIEW (Bot API 10.5) ---</b>\n\n" if post.post_type == "article" else "<b>👁 --- POST PREVIEW (Bot API 10.5) ---</b>\n\n"
+        article_header = "<b>👁 --- ARTICLE PREVIEW ---</b>\n\n" if post.post_type == "article" else "<b>👁 --- POST PREVIEW ---</b>\n\n"
         full_text = article_header + (post.text or "")
 
         rich_payload = build_rich_message_payload(

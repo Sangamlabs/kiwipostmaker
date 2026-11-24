@@ -30,21 +30,20 @@ def get_editor_text(post) -> str:
     if t_data:
         rows_cnt = len(t_data.get("rows", []))
         cols_cnt = len(t_data.get("headers", [])) or (len(t_data.get("rows", [[]])[0]) if rows_cnt > 0 else 0)
-        table_summary = f"{cols_cnt}x{rows_cnt + (1 if t_data.get('headers') else 0)} Native (API 10.1)"
+        table_summary = f"{cols_cnt} cols, {rows_cnt} rows"
     else:
         table_summary = "(None)"
 
     is_article = getattr(post, "post_type", "standard") == "article"
-    title_prefix = f"📰 <b>Article Studio (Draft #{post.id} - Bot API 10.5)</b>" if is_article else f"📝 <b>Post Studio (Draft #{post.id})</b>"
-    format_label = "📰 Article (Rich Message)" if is_article else "📝 Standard Post"
+    title_prefix = "📰 <b>Article Post</b>" if is_article else "📝 <b>Standard Post</b>"
     inline_cnt = len(post.inline_buttons_list)
     row_cnt = len(post.row_buttons_list)
     if inline_cnt > 0 and row_cnt > 0:
-        btn_summary = f"🔘 Inline: {inline_cnt} | 📑 Row: {row_cnt}"
+        btn_summary = f"Inline: {inline_cnt} | Row: {row_cnt}"
     elif inline_cnt > 0:
-        btn_summary = f"🔘 Inline: {inline_cnt}"
+        btn_summary = f"Inline: {inline_cnt}"
     elif row_cnt > 0:
-        btn_summary = f"📑 Row: {row_cnt}"
+        btn_summary = f"Row: {row_cnt}"
     else:
         btn_summary = "(None)"
 
@@ -52,17 +51,18 @@ def get_editor_text(post) -> str:
     if is_article and len(post.media_list) > 0:
         pos_icons = {"top": "⬆️ Top", "middle": "↕️ Middle", "bottom": "⬇️ Bottom"}
         cur_pos = getattr(post, "media_position", "top")
-        media_pos_line = f"• <b>Media Position:</b> <code>{pos_icons.get(cur_pos, '⬆️ Top')}</code>\n"
+        media_pos_line = f"• <b>Position:</b> <code>{pos_icons.get(cur_pos, '⬆️ Top')}</code>\n"
+
+    media_line = f"• <b>Media:</b> {len(post.media_list)}\n" if len(post.media_list) > 0 else "• <b>Media:</b> (None)\n"
 
     return (
         f"{title_prefix}\n\n"
-        f"• <b>Format:</b> <code>{format_label}</code>\n"
         f"• <b>Text:</b>\n{body_text}\n\n"
-        f"• <b>Media count:</b> {len(post.media_list)}\n"
+        f"{media_line}"
         f"{media_pos_line}"
         f"• <b>Buttons:</b> <code>{btn_summary}</code>\n"
         f"• <b>Table:</b> <code>{table_summary}</code>\n"
-        f"• <b>Destination:</b> <code>{post.channel_id or '(Not selected)'}</code>\n\n"
+        f"• <b>Channel:</b> <code>{post.channel_id or '(Not selected)'}</code>\n\n"
         f"<i>Use the actions below to build your post:</i>"
     )
 
@@ -88,26 +88,26 @@ async def safe_edit_editor_message(message, post):
             logger.warning("Entity parsing issue in draft #%d, fallback to clean text: %s", post.id, be)
             clean_text = re.sub(r'</?(?!(?:b|i|u|s|tg-spoiler|a|code|pre|blockquote)\b)[^>]*>', '', post.text or '')
             is_article = getattr(post, "post_type", "standard") == "article"
-            title_prefix = f"📰 <b>Article Studio (Draft #{post.id} - Bot API 10.5)</b>" if is_article else f"📝 <b>Post Studio (Draft #{post.id})</b>"
-            format_label = "📰 Article (Rich Message)" if is_article else "📝 Standard Post"
+            title_prefix = "📰 <b>Article Post</b>" if is_article else "📝 <b>Standard Post</b>"
             inline_cnt = len(post.inline_buttons_list)
             row_cnt = len(post.row_buttons_list)
             if inline_cnt > 0 and row_cnt > 0:
-                btn_summary = f"🔘 Inline: {inline_cnt} | 📑 Row: {row_cnt}"
+                btn_summary = f"Inline: {inline_cnt} | Row: {row_cnt}"
             elif inline_cnt > 0:
-                btn_summary = f"🔘 Inline: {inline_cnt}"
+                btn_summary = f"Inline: {inline_cnt}"
             elif row_cnt > 0:
-                btn_summary = f"📑 Row: {row_cnt}"
+                btn_summary = f"Row: {row_cnt}"
             else:
                 btn_summary = "(None)"
 
+            media_line = f"• <b>Media:</b> {len(post.media_list)}\n" if len(post.media_list) > 0 else "• <b>Media:</b> (None)\n"
+
             fallback_text = (
                 f"{title_prefix}\n\n"
-                f"• <b>Format:</b> <code>{format_label}</code>\n"
                 f"• <b>Text:</b>\n{clean_text if clean_text else '<i>(None)</i>'}\n\n"
-                f"• <b>Media count:</b> {len(post.media_list)}\n"
+                f"{media_line}"
                 f"• <b>Buttons:</b> <code>{btn_summary}</code>\n"
-                f"• <b>Destination:</b> <code>{post.channel_id or '(Not selected)'}</code>\n\n"
+                f"• <b>Channel:</b> <code>{post.channel_id or '(Not selected)'}</code>\n\n"
                 f"<i>Use the actions below to build your post:</i>"
             )
             await message.edit_text(text=fallback_text, parse_mode=ParseMode.HTML, reply_markup=keyboard)

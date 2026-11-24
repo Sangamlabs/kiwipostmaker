@@ -45,7 +45,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         f"• Rich text & Unicode font styling\n"
         f"• Colored inline URL buttons (Blue, Green, Red)\n"
         f"• Multi-image / video album publishing\n"
-        f"• Bot API 10.1 Native Table & Article Builder\n"
+        f"• Rich Articles & Native Tables\n"
         f"• Scheduled posts with MongoDB atomic locking\n"
         f"• 100% Free: No ads or subscriptions\n\n"
         f"<i>Select an option below to begin:</i>"

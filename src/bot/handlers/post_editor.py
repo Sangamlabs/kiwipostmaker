@@ -24,8 +24,8 @@ async def create_post_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         "✨ <b>Choose Post Format:</b>\n\n"
         "• 📝 <b>Standard Post:</b>\n"
         "Standard Telegram post with single media, photo/video album (up to 10 files), text/caption, and styled buttons.\n\n"
-        "• 📰 <b>Article Post (Telegram Bot API 10.5):</b>\n"
-        "Rich structured document! Easily attach native tables, media, headings, and expandable quote blocks together in one seamless post.\n\n"
+        "• 📰 <b>Article Post:</b>\n"
+        "Rich structured post with tables, media, quotes, and buttons inside your post.\n\n"
         "<i>Select a format to begin:</i>",
         parse_mode=ParseMode.HTML,
         reply_markup=get_post_format_selection_keyboard(),
@@ -97,8 +97,7 @@ async def handle_user_text_input(update: Update, context: ContextTypes.DEFAULT_T
             button_type="inline",
         )
         await message.reply_text(
-            f"✅ <b>{len(parsed_buttons)} Inline URL button(s) saved!</b>\n\n"
-            f"💡 <i>Tip: You can also add In-Body Row Buttons or preview your post below.</i>\n\n"
+            f"✅ <b>Inline buttons saved!</b>\n\n"
             f"{get_editor_text(updated)}",
             parse_mode=ParseMode.HTML,
             reply_markup=get_post_editor_keyboard(
@@ -136,8 +135,7 @@ async def handle_user_text_input(update: Update, context: ContextTypes.DEFAULT_T
             button_type="row",
         )
         await message.reply_text(
-            f"✅ <b>{len(parsed_buttons)} In-body row button(s) saved!</b>\n\n"
-            f"💡 <i>Tip: You can also add Inline URL Buttons or preview your post below.</i>\n\n"
+            f"✅ <b>Row buttons saved!</b>\n\n"
             f"{get_editor_text(updated)}",
             parse_mode=ParseMode.HTML,
             reply_markup=get_post_editor_keyboard(
@@ -165,7 +163,7 @@ async def handle_user_text_input(update: Update, context: ContextTypes.DEFAULT_T
 
         updated = await post_repo.update_post(post_id, table_json=json.dumps(parsed_table))
         await message.reply_text(
-            f"✅ <b>Bot API 10.1 Native Table attached!</b>\n\n{get_editor_text(updated)}",
+            f"✅ <b>Table attached!</b>\n\n{get_editor_text(updated)}",
             parse_mode=ParseMode.HTML,
             reply_markup=get_post_editor_keyboard(
                 updated.id,
@@ -224,7 +222,7 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
 
         updated = await post_repo.update_post(draft.id, **update_kwargs)
         await message.reply_text(
-            f"✅ <b>Media attached!</b> ({len(media_items)} item(s) in draft #{updated.id})\n\n"
+            f"✅ <b>Media attached!</b>\n\n"
             f"{get_editor_text(updated)}",
             parse_mode=ParseMode.HTML,
             reply_markup=get_post_editor_keyboard(
