@@ -1,6 +1,8 @@
+import asyncio
 import json
 import logging
 import re
+from typing import Any, Dict, Tuple
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.error import BadRequest
@@ -174,8 +176,85 @@ async def handle_user_text_input(update: Update, context: ContextTypes.DEFAULT_T
             ),
         )
 
+# In-memory debounce buffer for incoming media groups / rapid attachments
+_MEDIA_BATCHES: Dict[Tuple[int, str], Dict[str, Any]] = {}
+MEDIA_BATCH_DELAY = 0.8
+
+async def _flush_media_batch(
+    batch_key: Tuple[int, str],
+    user_id: int,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    """Waits briefly for remaining album items, then saves all media at once and sends a single reply."""
+    try:
+        await asyncio.sleep(MEDIA_BATCH_DELAY)
+        batch = _MEDIA_BATCHES.pop(batch_key, None)
+        if not batch or not batch["items"]:
+            return
+
+        # Sort by Telegram message_id to preserve exact album order
+        items = sorted(batch["items"], key=lambda x: x["message_id"])
+        last_message = items[-1]["message"]
+        post_repo: PostRepository = context.bot_data["post_repo"]
+
+        pending_post_id = context.user_data.get("pending_post_id")
+        if pending_post_id:
+            draft = await post_repo.get_by_id(pending_post_id)
+        else:
+            draft = await post_repo.get_latest_draft(user_id)
+
+        if not draft:
+            draft = await post_repo.create_draft(user_id)
+
+        media_items = list(draft.media_list)
+        if len(media_items) >= 10:
+            await last_message.reply_text("⚠️ Maximum 10 media items reached for this post.")
+            return
+
+        added_count = 0
+        skipped_count = 0
+        first_caption = ""
+        for entry in items:
+            if len(media_items) < 10:
+                media_items.append(entry["media"])
+                added_count += 1
+            else:
+                skipped_count += 1
+            if entry["caption"] and not first_caption:
+                first_caption = entry["caption"]
+
+        update_kwargs: Dict[str, Any] = {"media_json": json.dumps(media_items)}
+        if first_caption and not draft.text:
+            update_kwargs["text"] = first_caption
+
+        updated = await post_repo.update_post(draft.id, **update_kwargs)
+        status_line = "✅ <b>Media attached!</b>"
+        if skipped_count > 0:
+            status_line += f" (Max 10 reached, {skipped_count} extra item(s) skipped)"
+
+        await last_message.reply_text(
+            f"{status_line}\n\n{get_editor_text(updated)}",
+            parse_mode=ParseMode.HTML,
+            reply_markup=get_post_editor_keyboard(
+                updated.id,
+                bool(updated.media_list),
+                bool(updated.channel_id),
+                post_type=getattr(updated, "post_type", "standard"),
+                media_position=getattr(updated, "media_position", "top"),
+            ),
+        )
+    except asyncio.CancelledError:
+        pass
+    except Exception as exc:
+        logger.error("MongoDB error attaching media batch: %s", exc)
+        batch = _MEDIA_BATCHES.pop(batch_key, None)
+        if batch and batch["items"]:
+            await batch["items"][-1]["message"].reply_text(
+                "⚠️ Could not save media: Database is currently unreachable."
+            )
+
 async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Captures photos or videos with auto-detected formatted captions."""
+    """Captures photos, videos, or stickers and batches albums to prevent reply spam."""
     message = update.effective_message
     user = update.effective_user
     if not message or not user:
@@ -196,46 +275,26 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
     else:
         return
 
-    # Automatically extract native Telegram formatted caption
     caption = extract_formatted_text(message)
+    group_key = str(message.media_group_id) if message.media_group_id else f"single_{user.id}"
+    batch_key = (user.id, group_key)
 
-    post_repo: PostRepository = context.bot_data["post_repo"]
-    try:
-        pending_post_id = context.user_data.get("pending_post_id")
-        if pending_post_id:
-            draft = await post_repo.get_by_id(pending_post_id)
-        else:
-            draft = await post_repo.get_latest_draft(user.id)
+    batch = _MEDIA_BATCHES.get(batch_key)
+    if batch is None:
+        batch = {"items": [], "task": None}
+        _MEDIA_BATCHES[batch_key] = batch
 
-        if not draft:
-            draft = await post_repo.create_draft(user.id)
+    batch["items"].append({
+        "message_id": message.message_id,
+        "media": {"file_id": file_id, "media_type": media_type},
+        "caption": caption,
+        "message": message,
+    })
 
-        media_items = draft.media_list
-        if len(media_items) >= 10:
-            await message.reply_text("⚠️ Maximum 10 media items reached for this post.")
-            return
+    if batch["task"] and not batch["task"].done():
+        batch["task"].cancel()
 
-        media_items.append({"file_id": file_id, "media_type": media_type})
-        update_kwargs = {"media_json": json.dumps(media_items)}
-        if caption and not draft.text:
-            update_kwargs["text"] = caption
-
-        updated = await post_repo.update_post(draft.id, **update_kwargs)
-        await message.reply_text(
-            f"✅ <b>Media attached!</b>\n\n"
-            f"{get_editor_text(updated)}",
-            parse_mode=ParseMode.HTML,
-            reply_markup=get_post_editor_keyboard(
-                updated.id,
-                bool(updated.media_list),
-                bool(updated.channel_id),
-                post_type=getattr(updated, "post_type", "standard"),
-                media_position=getattr(updated, "media_position", "top"),
-            ),
-        )
-    except Exception as exc:
-        logger.error("MongoDB error attaching media: %s", exc)
-        await message.reply_text("⚠️ Could not save media: Database is currently unreachable.")
+    batch["task"] = asyncio.create_task(_flush_media_batch(batch_key, user.id, context))
 
 def get_post_editor_handlers():
     return [

@@ -94,18 +94,18 @@ def extract_formatted_text(message: Any) -> str:
         return ""
 
     if getattr(message, "text", None):
-        if getattr(message, "entities", None):
-            return sanitize_telegram_html(message.text_html)
         raw = message.text
         has_html = any(f"<{t}" in raw.lower() for t in VALID_TELEGRAM_TAGS)
-        return sanitize_telegram_html(raw if has_html else message.text_html)
+        if has_html:
+            return sanitize_telegram_html(raw)
+        return sanitize_telegram_html(message.text_html)
 
     elif getattr(message, "caption", None):
-        if getattr(message, "caption_entities", None):
-            return sanitize_telegram_html(message.caption_html)
         raw = message.caption
         has_html = any(f"<{t}" in raw.lower() for t in VALID_TELEGRAM_TAGS)
-        return sanitize_telegram_html(raw if has_html else message.caption_html)
+        if has_html:
+            return sanitize_telegram_html(raw)
+        return sanitize_telegram_html(message.caption_html)
 
     return ""
 
@@ -357,7 +357,7 @@ def build_rich_message_payload(
     table_consumed = False
 
     # Bot API 10.5: Parse all blockquotes into native rich blocks
-    matches = list(re.finditer(r'<blockquote([^>]*)>(.*?)</blockquote>', clean_text, flags=re.DOTALL | re.IGNORECASE))
+    matches = list(re.finditer(r'<(blockquote|tg-blockquote)([^>]*)>(.*?)</\1>', clean_text, flags=re.DOTALL | re.IGNORECASE))
     if matches:
         last_idx = 0
         for m in matches:
@@ -384,8 +384,8 @@ def build_rich_message_payload(
                     if b_before:
                         blocks.append(b_before)
 
-            attr_str = m.group(1)
-            inner_content = m.group(2).strip()
+            attr_str = m.group(2)
+            inner_content = m.group(3).strip()
             is_expandable = bool(re.search(r'\bexpandable\b', attr_str, re.IGNORECASE))
             b_type = "expandable_blockquote" if is_expandable else "blockquote"
             cite_match = re.search(r'\b(?:cite|credit)=["\']([^"\']+)["\']', attr_str, re.IGNORECASE)

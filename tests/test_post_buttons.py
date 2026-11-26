@@ -333,3 +333,74 @@ def test_nested_media_and_table_in_expandable_blockquote():
     # Block 2: Outro paragraph
     assert blocks[2]["type"] == "paragraph"
     assert "Outro" in blocks[2]["text"]
+
+def test_extract_formatted_text_preserves_raw_expandable_with_urls():
+    """Verify raw <blockquote expandable> is preserved even when URLs/mentions trigger message.entities."""
+    from unittest.mock import MagicMock
+    from src.bot.utils.formatting import extract_formatted_text
+
+    msg = MagicMock()
+    msg.text = "<blockquote expandable>Line 1\nLine 2</blockquote>\nhttps://t.me/example"
+    msg.entities = [MagicMock(type="url")]
+    msg.text_html = "&lt;blockquote expandable&gt;Line 1\nLine 2&lt;/blockquote&gt;\nhttps://t.me/example"
+
+    extracted = extract_formatted_text(msg)
+    assert "<blockquote expandable>" in extracted
+    assert "&lt;blockquote" not in extracted
+
+@pytest.mark.asyncio
+async def test_media_batch_debouncing_prevents_spam():
+    """Verify multiple media arriving in an album trigger only 1 DB update and 1 reply."""
+    import asyncio
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock, MagicMock
+    from src.bot.handlers import post_editor
+    from src.bot.models.post import Post
+
+    post_editor._MEDIA_BATCHES.clear()
+    original_delay = post_editor.MEDIA_BATCH_DELAY
+    post_editor.MEDIA_BATCH_DELAY = 0.05
+
+    try:
+        draft = Post(id=99, owner_user_id=777, post_type="article", media_json="[]")
+        updated_draft = Post(
+            id=99,
+            owner_user_id=777,
+            post_type="article",
+            media_json='[{"file_id": "f1", "media_type": "photo"}, {"file_id": "f2", "media_type": "photo"}, {"file_id": "f3", "media_type": "photo"}]',
+        )
+
+        post_repo = MagicMock()
+        post_repo.get_latest_draft = AsyncMock(return_value=draft)
+        post_repo.update_post = AsyncMock(return_value=updated_draft)
+
+        context = MagicMock()
+        context.user_data = {}
+        context.bot_data = {"post_repo": post_repo}
+
+        messages = []
+        for idx in range(1, 4):
+            msg = MagicMock()
+            msg.message_id = 100 + idx
+            msg.media_group_id = "album_xyz"
+            msg.photo = [SimpleNamespace(file_id=f"f{idx}")]
+            msg.video = None
+            msg.sticker = None
+            msg.text = None
+            msg.caption = None
+            msg.reply_text = AsyncMock()
+            messages.append(msg)
+
+            update = MagicMock()
+            update.effective_message = msg
+            update.effective_user = SimpleNamespace(id=777)
+            await post_editor.handle_incoming_media(update, context)
+
+        await asyncio.sleep(0.15)
+
+        post_repo.update_post.assert_awaited_once()
+        total_replies = sum(m.reply_text.await_count for m in messages)
+        assert total_replies == 1
+    finally:
+        post_editor.MEDIA_BATCH_DELAY = original_delay
+        post_editor._MEDIA_BATCHES.clear()
