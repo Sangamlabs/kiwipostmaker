@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: kiwi-post-maker
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m src.bot.main
+    healthCheckPath: /health
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: MONGO_URI
+        sync: false
+      - key: DATABASE_NAME
+        value: postbot
+      - key: OWNER_IDS
+        sync: false
+      - key: LOG_LEVEL
+        value: INFO

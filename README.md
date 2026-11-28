@@ -28,7 +28,39 @@ Supports **Telegram Bot API 10.1–10.5 Rich Messages**, native tables, slidesho
 
 ## 🚀 Deployment
 
-### 1. Deploy on Railway
+### 1. Deploy on Render (Free Web Service + UptimeRobot 24/7)
+
+Bot mein built-in `aiohttp` keep-alive server (`src/bot/keep_alive.py`) hai jo `0.0.0.0:$PORT` par `/` (`Bot is running`) aur `/health` (`{"status": "ok"}`) serve karta hai.
+
+1. **GitHub par code push karein** (already configured on `Sangamlabs/kiwipostmaker`).
+2. **[Render Dashboard](https://dashboard.render.com)** par jayein → **New +** → **Web Service** select karein.
+3. Apna GitHub repo (`kiwipostmaker`) connect karein:
+   - **Runtime:** `Python 3`
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `python -m src.bot.main`
+   - **Instance Type:** `Free`
+4. **Environment Variables** add karein:
+   - `BOT_TOKEN` = `@BotFather` se mila token
+   - `MONGO_URI` = MongoDB Atlas connection URI
+   - `DATABASE_NAME` = `postbot`
+   - `OWNER_IDS` = Aapki Telegram user ID
+   - `LOG_LEVEL` = `INFO`
+5. **Create Web Service** par click karein. Deploy hone ke baad aapko URL milega (e.g. `https://kiwi-post-maker.onrender.com`).
+6. **UptimeRobot (24/7 Jagaa Rakhne Ke Liye):**
+   - [UptimeRobot](https://uptimerobot.com) par free account banayein → **Add New Monitor**.
+   - **Monitor Type:** `HTTP(s)`
+   - **URL:** `https://<aapka-render-url>.onrender.com/health`
+   - **Monitoring Interval:** `5 minutes`
+   - Save kar dein! Render free instance ab 15 min inactivity ke baad sleep nahi hoga.
+
+> **Free Tier Limitations & Solutions:**
+> - **750 free hours/month:** 1 service 24/7 chalane ke liye ~720–744 hours chahiye hote hain, jo free tier mein cover ho jaata hai (bas multiple services mat chalayein).
+> - **Sleep after 15 min:** UptimeRobot ka 5-minute HTTP ping isko jagaa kar rakhta hai.
+> - **Data reset on restart:** Render ki disk ephemeral hoti hai, lekin hamara bot **MongoDB Atlas** use karta hai isliye drafts/channels/schedules kabhi delete nahi hote.
+
+---
+
+### 2. Deploy on Railway
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com)
 

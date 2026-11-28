@@ -11,6 +11,7 @@ from telegram.constants import ParseMode
 from telegram.ext import Application, ApplicationBuilder, ContextTypes
 
 from . import config
+from .keep_alive import start_keep_alive, stop_keep_alive
 from .database.connection import DatabaseConnection
 from .database.repositories.posts import PostRepository
 from .database.repositories.channels import ChannelRepository
@@ -32,6 +33,10 @@ logger = logging.getLogger("Postbot")
 
 async def post_init(application: Application) -> None:
     """Lifecycle hook called when application event loop is running."""
+    # Render aur UptimeRobot ke liye keep-alive web server start karo
+    web_runner = await start_keep_alive()
+    application.bot_data["web_runner"] = web_runner
+
     db_conn: DatabaseConnection = application.bot_data["db_conn"]
     await db_conn.init_indexes()
 
@@ -47,6 +52,9 @@ async def post_shutdown(application: Application) -> None:
     db_conn: DatabaseConnection = application.bot_data.get("db_conn")
     if db_conn:
         await db_conn.close()
+    web_runner = application.bot_data.get("web_runner")
+    if web_runner:
+        await stop_keep_alive(web_runner)
     logger.info("Postbot shutdown complete.")
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
